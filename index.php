@@ -17,57 +17,56 @@
  *      https://github.com/hanafiah/esolat
  * 
  */
+set_time_limit(120);
+
 class Esolat {
-    const TODAY = 0;
-    const WEEKLY = 1;
-    const MONTHLY = 2;
-    const YEARLY = 3;
 
-    private $_esolatUrl = 'http://www.e-solat.gov.my/prayer_time.php?zon={!ZONE}&jenis={!PERIOD}&bulan={!MONTH}&LG=BM&year=';
+    private $_esolatUrl = 'http://www.e-solat.gov.my/prayer_time.php?zon={!ZONE}&jenis=3&bulan={!MONTH}&LG=BM&year=';
     private $_zone;
-    private $_period;
     private $_timeout;
-    private $_tables; // table dom
+    private $_tables = array(); // table dom
     private $_month = 0;
+    public $cache = true;
+    public $cacheDays = 30;
 
-    public function __construct($zone = 'jhr02', $period=2, $timeout = 120) {
+    public function __construct($zone = 'jhr02', $timeout = 120) {
         $this->_zone = $zone;
-        $this->_period = $period;
         $this->_timeout = $timeout;
     }
 
     public function fetchEsolatDom() {
         $this->_esolatUrl = str_replace('{!ZONE}', $this->_zone, $this->_esolatUrl);
-        $this->_esolatUrl = str_replace('{!PERIOD}', $this->_period, $this->_esolatUrl);
-        $this->_esolatUrl = str_replace('{!MONTH}', $this->_month, $this->_esolatUrl);
-        $ch = curl_init($this->_esolatUrl);
+
+        $ch = curl_init();
         curl_setopt($ch, CURLOPT_HEADER, 0);
         curl_setopt($ch, CURLOPT_ENCODING, ''); //handle all encodings
 
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 0);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($ch, CURLOPT_TIMEOUT, $this->_timeout);
-        $output = false;
+        $output = array();
         try {
-            $output = curl_exec($ch);
-            preg_match("~<body[^>]*>(.*?)</body>~si", $output, $output);
-            $output = $output[1];
+            foreach (range(1, 12) as $month) {
+                $url = str_replace('{!MONTH}', $month, $this->_esolatUrl);
+                curl_setopt($ch, CURLOPT_URL, $url);
+                $output[] = curl_exec($ch);
+            }
             curl_close($ch);
         } catch (Exception $e) {
             exit("Error with cURL request");
         }
-
         return $output;
     }
 
     public function getTablesDom() {
-        $htmlDom = $this->fetchEsolatDom();
-        if ($htmlDom !== false) {
-            $dom = new DOMDocument();
-            $dom->preservWhiteSpace = false;
-
-            @$dom->loadHTML($htmlDom);
-            $this->_tables = $dom->getElementsByTagname('table');
+        $htmlDoms = $this->fetchEsolatDom();
+        if (count($htmlDoms) > 0) {
+            foreach ($htmlDoms as $htmlDom) {
+                $dom = new DOMDocument();
+                $dom->preservWhiteSpace = false;
+                @$dom->loadHTML($htmlDom);
+                $this->_tables[] = $dom->getElementsByTagname('table');
+            }
         } else {
             exit("Error with Table DOM");
         }
@@ -75,67 +74,154 @@ class Esolat {
     }
 
     public function getTableData($tableNumber = 1) {
-        if (empty($this->_tables)) {
+        if (count($this->_tables) == 0) {
             $this->getTablesDom();
         }
-
-        $table = $this->_tables->item($tableNumber - 1);
-        $rows = $table->getElementsByTagName('tr');
-
         $rowData = array();
-        for ($i = 0; $i < $rows->length; $i++) {
-            $row = $rows->item($i);
-            $cols = $row->getElementsByTagName('td');
-            $colData = array();
-            foreach ($cols as $col) {
-                $colData[] = trim($col->nodeValue);
+        foreach ($this->_tables as $key => $value) {
+            $table = $value->item($tableNumber - 1);
+            $rows = $table->getElementsByTagName('tr');
+
+            $rowData[$key] = array();
+            for ($i = 0; $i < $rows->length; $i++) {
+                $row = $rows->item($i);
+                $cols = $row->getElementsByTagName('td');
+                $colData = array();
+                foreach ($cols as $col) {
+                    $colData[] = trim($col->nodeValue);
+                }
+                $rowData[$key][] = $colData;
             }
-            $rowData[] = $colData;
         }
         return $rowData;
     }
 
     public function getEsolatInfo() {
-        $data = $this->getTableData(1);
+        $cache_file = 'cache/' . md5('info' . $this->_zone);
+        if ($this->cache === true) {
 
+            if (file_exists($cache_file)) {
+                $result = json_decode(fread(fopen($cache_file, 'r'), filesize($cache_file)));
+                return $result;
+            }
+        }
+        $datas = $this->getTableData(1);
         $result = array();
-        $result['title'] = $data[0][0];
-        $result['Location'] = $data[1][1];
-        $result['date'] = $data[2][1];
-        $result['gmt'] = $data[3][1];
-        $result['qibla'] = $data[4][1];
+        foreach ($datas as $key => $data) {
+            $info = array();
+            $info['title'] = $data[0][0];
+            $info['Location'] = $data[1][1];
+            $info['date'] = $data[2][1];
+            $info['gmt'] = $data[3][1];
+            $info['qibla'] = $data[4][1];
+            $result[$key] = (object) $info;
+        }
+
+        $fh = fopen($cache_file, 'w');
+        fwrite($fh, json_encode($result));
+        fclose($fh);
+
         return $result;
     }
 
     public function getEsolatData() {
-        $data = $this->getTableData(2);
-        $result = array();
-        foreach ($data[0] as $row) {
-            $result['meta'][] = $row;
+        $cache_file = 'cache/' . md5('data' . $this->_zone);
+        if ($this->cache === true) {
+            if (file_exists($cache_file)) {
+                $result = json_decode(fread(fopen($cache_file, 'r'), filesize($cache_file)));
+                return $result;
+            }
         }
 
-        $data = array_slice($data, 1);
-        $result['data'] = $data;
-
+        $months = $this->getTableData(2);
+        $result = array();
+        foreach ($months as $key => $month) {
+            if ($key == 0) {
+                $result[$key]['meta'][] = $month[0];
+            }
+            $month = array_slice($month, 1);
+            $result[$key]['data'] = $month;
+        }
+        $fh = fopen($cache_file, 'w');
+        fwrite($fh, json_encode($result));
+        fclose($fh);
         return $result;
+    }
+
+    public function getMonth($month=1) {
+        $data = $this->getEsolatData();
+        $info = $this->getEsolatInfo();
+
+
+        return array(
+            'info' => $info[$month - 1],
+            'meta' => $data[$month - 1]->meta[0],
+            'data' => $data[$month - 1]->data,
+        );
+    }
+
+    public function getDay($day=1, $month=1) {
+        $data = $this->getEsolatData();
+        $info = $this->getEsolatInfo();
+        return array(
+            'info' => $info[$month - 1],
+            'meta' => $data[$month - 1]->meta[$day - 1],
+            'data' => $data[$month - 1]->data[$day - 1],
+        );
+    }
+
+    public function getYear() {
+        $data = $this->getEsolatData();
+        $info = $this->getEsolatInfo();
+
+        $monthData = array();
+        foreach ($data as $month) {
+            $monthData[] = $month->data;
+        }
+        return array(
+            'info' => $info[0],
+            'meta' => $data[0]->meta[0],
+            'data' => $monthData,
+        );
     }
 
 }
 
-$test = new Esolat('jhr02', 3, 0);
+/**
+ * Test data
+ */
+$test = new Esolat('jhr02');
+$data = $test->getYear();
 
-$myFile = "domoutput.txt";
-$fh = fopen($myFile, 'w');
-fwrite($fh, $test->fetchEsolatDom());
+echo 'Year ', '<br/>';
+echo str_repeat('-', 90), '<br/>';
+foreach ($data['meta'] as $row) {
+    echo $row, str_repeat('&nbsp;', 5);
+}
+echo '<br/>';
+echo str_repeat('-', 90), '<br/>';
+foreach ($data['data'] as $key => $rows) {
+    echo '<strong>', date("F", mktime(0, 0, 0, ($key + 1))), '</strong><br/>';
+    foreach ($rows as $row) {
+        foreach ($row as $data) {
+            echo $data, str_repeat('&nbsp;', 10);
+        }
+        echo '<br/>';
+    }
+    echo '<br/>';
+}
 
-$data = $test->getEsolatInfo();
+
+
+echo '<hr>';
+$data = $test->getMonth();
 echo '<pre>';
 print_r($data);
 echo '</pre>';
-//
-$data = $test->getEsolatData();
+echo '<hr>';
+$data = $test->getDay();
 echo '<pre>';
 print_r($data);
 echo '</pre>';
-
+echo '<hr>';
 
