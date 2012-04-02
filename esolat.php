@@ -110,11 +110,11 @@ class Esolat {
         foreach ($datas as $key => $data) {
             $info = array();
             $info['title'] = $data[0][0];
-            $info['Location'] = $data[1][1];
+            $info['location'] = $data[1][1];
             $info['date'] = $data[2][1];
             $info['gmt'] = $data[3][1];
             $info['qibla'] = $data[4][1];
-            $result[$key] = (object) $info;
+            $result[$key] = $info;
         }
 
         if (is_writable('cache/')) {
