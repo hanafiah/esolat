@@ -1,36 +1,38 @@
 <?php
-
 include('esolat.php');
+?>
 
-
-
-/**
- * Test data
- */
-$test = new Esolat('jhr02',0);
-
+<!DOCTYPE>
+<html>
+    <head>
+        <title>Esolat Jakim</title>
+    </head>
+    <style>
+        *{
+            font-family: 'courier';
+            font-size: 10px;
+        }
+    </style>
+    <body>
+        <?php
+        
+$test = new Esolat('jhr02');
 
 
 
 $data = $test->getYear();
-//echo '<pre>';
-//print_r($data);
-//echo '</pre>';
-//
-//exit();
-
 echo 'Year ', '<br/>';
-echo str_repeat('-', 90), '<br/>';
+echo str_repeat('-', 110), '<br/>';
 foreach ($data['meta'] as $row) {
-    echo $row, str_repeat('&nbsp;', 5);
+    echo str_replace(" ", "&nbsp;",str_pad($row,12," "));
 }
 echo '<br/>';
-echo str_repeat('-', 90), '<br/>';
+echo str_repeat('-', 110), '<br/>';
 foreach ($data['data'] as $key => $rows) {
     echo '<strong>', date("F", mktime(0, 0, 0, ($key + 1))), '</strong><br/>';
     foreach ($rows as $row) {
         foreach ($row as $data) {
-            echo $data, str_repeat('&nbsp;', 10);
+            echo str_replace(" ", "&nbsp;",str_pad($data,12," "));
         }
         echo '<br/>';
     }
@@ -50,3 +52,9 @@ foreach ($data['data'] as $key => $rows) {
 //print_r($data);
 //echo '</pre>';
 //echo '<hr>';
+
+?>
+        
+    </body>
+</html>
+

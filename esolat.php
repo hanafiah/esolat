@@ -5,7 +5,7 @@
  * Wrap and convert jakim's esolat html data into text delimiter, json and xml 
  *
  * @author      ibnuyahya <ibnuyahya@gmail.com>
- * @version     1.0
+ * @version     1.0 require php 5.2 and above
  * @since       Apr 2, 2012
  * @link        http://www.e-solat.gov.my/prayer_time.php?zon=JHR01&jenis=1
  * 
@@ -101,7 +101,7 @@ class Esolat {
         if ($this->cache === true) {
 
             if (is_readable($cache_file)) {
-                $result = json_decode(fread(fopen($cache_file, 'r'), filesize($cache_file)));
+                $result = json_decode(fread(fopen($cache_file, 'r'), filesize($cache_file)),true);
                 return $result;
             }
         }
@@ -121,7 +121,7 @@ class Esolat {
             $fh = fopen($cache_file, 'w');
             fwrite($fh, json_encode($result));
             fclose($fh);
-        } 
+        }
 
         return $result;
     }
@@ -130,14 +130,14 @@ class Esolat {
         $cache_file = 'cache/' . md5('data' . $this->_zone);
         if ($this->cache === true) {
             if (is_readable($cache_file)) {
-                $result = json_decode(fread(fopen($cache_file, 'r'), filesize($cache_file)));
+                $result = json_decode(fread(fopen($cache_file, 'r'), filesize($cache_file)),true);
                 return $result;
             }
         }
 
         $months = $this->getTableData(2);
-       
-        
+
+
         $result = array();
         foreach ($months as $key => $month) {
             if ($key == 0) {
@@ -146,16 +146,16 @@ class Esolat {
             $month = array_slice($month, 1);
             $result[$key]['data'] = $month;
         }
-        
 
-        
+
+
         if (is_writable('cache/')) {
 
             $fh = fopen($cache_file, 'w');
             fwrite($fh, json_encode($result));
             fclose($fh);
-        } 
-        
+        }
+
         return $result;
     }
 
@@ -184,7 +184,7 @@ class Esolat {
     public function getYear() {
         $data = $this->getEsolatData();
         $info = $this->getEsolatInfo();
-        
+
 
         $monthData = array();
         foreach ($data as $month) {
