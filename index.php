@@ -12,7 +12,7 @@ class Esolat{
     const MONTHLY   = 2;
     const YEARLY    = 3;
     
-    private $esolatUrl  = 'http://www.e-solat.gov.my/prayer_time.php?zon={!ZONE}&jenis={!PERIOD}';
+    private $_esolatUrl  = 'http://www.e-solat.gov.my/prayer_time.php?zon={!ZONE}&jenis={!PERIOD}';
     private $_zone      = '';
     private $_period    = 0;
     
