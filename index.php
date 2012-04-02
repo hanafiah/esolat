@@ -1,9 +1,16 @@
 <?php
-
-
 /**
+ * JAKIM esolat wrapper
+ * 
  *
- * URL : http://www.e-solat.gov.my/prayer_time.php?zon=JHR01&jenis=1 
+ * @author ibnuyahya <ibnuyahya@gmail.com>
+ * @version 1.0
+ * @since Apr 2, 2012
+ * @link http://www.e-solat.gov.my/prayer_time.php?zon=JHR01&jenis=1
+ * 
+ * @copyright ibnuyahya.com
+ * @license    GPL v2 - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+ * 
  */
 
 class Esolat{
@@ -37,7 +44,7 @@ class Esolat{
          *
          *
          * @owner      http://ibnuyahya.com
-         * @license    GPL v2 - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+         *
          * @version    1.0
          */
 //        if (isset($_GET['kod'])) {
@@ -53,7 +60,7 @@ class Esolat{
 //            foreach ($trs as $tr) {
 //                $td = $tr->getElementsByTagName('td');
 //                $result = array();
-//                foreach ($td as $row) {
+//         @license    GPL v2 - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html        foreach ($td as $row) {
 //                    $result[] = trim($row->nodeValue);
 //                }
 //                $results[] = $result;
