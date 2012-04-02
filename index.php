@@ -1,142 +1,141 @@
 <?php
+
 /**
- * JAKIM esolat wrapper
- * 
+ * JAKIM's esolat wrapper
+ * Wrap and convert jakim's esolat html data into text delimiter, json and xml 
  *
- * @author ibnuyahya <ibnuyahya@gmail.com>
- * @version 1.0
- * @since Apr 2, 2012
- * @link http://www.e-solat.gov.my/prayer_time.php?zon=JHR01&jenis=1
+ * @author      ibnuyahya <ibnuyahya@gmail.com>
+ * @version     1.0
+ * @since       Apr 2, 2012
+ * @link        http://www.e-solat.gov.my/prayer_time.php?zon=JHR01&jenis=1
  * 
- * @copyright ibnuyahya.com
- * @license    GPL v2 - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+ * @copyright   ibnuyahya.com
+ * @license     GPL v2 - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+ * 
+ * You are premit to do whatever you want with this code. Spread it or fork it  
+ * from my github, 
+ *      https://github.com/hanafiah/esolat
  * 
  */
+class Esolat {
+    const TODAY = 0;
+    const WEEKLY = 1;
+    const MONTHLY = 2;
+    const YEARLY = 3;
 
-class Esolat{
-    const TODAY     = 0;
-    const WEEKLY    = 1;
-    const MONTHLY   = 2;
-    const YEARLY    = 3;
-    
-    private $_esolatUrl  = 'http://www.e-solat.gov.my/prayer_time.php?zon={!ZONE}&jenis={!PERIOD}';
-    private $_zone      = '';
-    private $_period    = 0;
-    
-    
-    public function __construct($zone = '',$period=2) {
-        $this->_zone    = $zone;
-        $this->_period  = $period;
+    private $_esolatUrl = 'http://www.e-solat.gov.my/prayer_time.php?zon={!ZONE}&jenis={!PERIOD}&bulan={!MONTH}&LG=BM&year=';
+    private $_zone;
+    private $_period;
+    private $_timeout;
+    private $_tables; // table dom
+    private $_month = 0;
+
+    public function __construct($zone = 'jhr02', $period=2, $timeout = 120) {
+        $this->_zone = $zone;
+        $this->_period = $period;
+        $this->_timeout = $timeout;
     }
-    
-    public function fetchEsolatDom(){
-        
+
+    public function fetchEsolatDom() {
+        $this->_esolatUrl = str_replace('{!ZONE}', $this->_zone, $this->_esolatUrl);
+        $this->_esolatUrl = str_replace('{!PERIOD}', $this->_period, $this->_esolatUrl);
+        $this->_esolatUrl = str_replace('{!MONTH}', $this->_month, $this->_esolatUrl);
+        $ch = curl_init($this->_esolatUrl);
+        curl_setopt($ch, CURLOPT_HEADER, 0);
+        curl_setopt($ch, CURLOPT_ENCODING, ''); //handle all encodings
+
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 0);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_TIMEOUT, $this->_timeout);
+        $output = false;
+        try {
+            $output = curl_exec($ch);
+            preg_match("~<body[^>]*>(.*?)</body>~si", $output, $output);
+            $output = $output[1];
+            curl_close($ch);
+        } catch (Exception $e) {
+            exit("Error with cURL request");
+        }
+
+        return $output;
     }
-    
-    
-    
+
+    public function getTablesDom() {
+        $htmlDom = $this->fetchEsolatDom();
+        if ($htmlDom !== false) {
+            $dom = new DOMDocument();
+            $dom->preservWhiteSpace = false;
+
+            @$dom->loadHTML($htmlDom);
+            $this->_tables = $dom->getElementsByTagname('table');
+        } else {
+            exit("Error with Table DOM");
+        }
+        return $this;
+    }
+
+    public function getTableData($tableNumber = 1) {
+        if (empty($this->_tables)) {
+            $this->getTablesDom();
+        }
+
+        $table = $this->_tables->item($tableNumber - 1);
+        $rows = $table->getElementsByTagName('tr');
+
+        $rowData = array();
+        for ($i = 0; $i < $rows->length; $i++) {
+            $row = $rows->item($i);
+            $cols = $row->getElementsByTagName('td');
+            $colData = array();
+            foreach ($cols as $col) {
+                $colData[] = trim($col->nodeValue);
+            }
+            $rowData[] = $colData;
+        }
+        return $rowData;
+    }
+
+    public function getEsolatInfo() {
+        $data = $this->getTableData(1);
+
+        $result = array();
+        $result['title'] = $data[0][0];
+        $result['Location'] = $data[1][1];
+        $result['date'] = $data[2][1];
+        $result['gmt'] = $data[3][1];
+        $result['qibla'] = $data[4][1];
+        return $result;
+    }
+
+    public function getEsolatData() {
+        $data = $this->getTableData(2);
+        $result = array();
+        foreach ($data[0] as $row) {
+            $result['meta'][] = $row;
+        }
+
+        $data = array_slice($data, 1);
+        $result['data'] = $data;
+
+        return $result;
+    }
+
 }
 
-        /**
-         * JAKIM esolat wrapper
-         *
-         * This class created for Educational purpose only. Use on your own risk!
-         *
-         *
-         * @owner      http://ibnuyahya.com
-         *
-         * @version    1.0
-         */
-//        if (isset($_GET['kod'])) {
-//            $kod = $_GET['kod'];
-//            $data = file_get_contents('http://www.e-solat.gov.my/solat.php?kod=' . $kod);
-//            $data = strip_tags($data, '<table><tr><td></td></tr></table>');
-//            $data = str_replace("&nbsp;", "", $data);
+$test = new Esolat('jhr02', 3, 0);
+
+$myFile = "domoutput.txt";
+$fh = fopen($myFile, 'w');
+fwrite($fh, $test->fetchEsolatDom());
+
+$data = $test->getEsolatInfo();
+echo '<pre>';
+print_r($data);
+echo '</pre>';
 //
-//            $dom = new DOMDocument();
-//            $dom->prevservWhiteSpace = false;
-//            $dom->loadHTML($data);
-//            $trs = $dom->getElementsByTagName('tr');
-//            foreach ($trs as $tr) {
-//                $td = $tr->getElementsByTagName('td');
-//                $result = array();
-//         @license    GPL v2 - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html        foreach ($td as $row) {
-//                    $result[] = trim($row->nodeValue);
-//                }
-//                $results[] = $result;
-//            }
-//
-//            $data = array();
-//            $data['kawasan'] = $results[0][0];
-//            $data['tarikh'] = trim($results[1][0], 'JAKIM');
-//            $data['kiblat'] = mb_convert_encoding($results[3][1], "HTML-ENTITIES", "UTF-8");;
-//            $data['gmt'] = $results[2][1];
-//
-//            $data['jadual'][$results[5][0]] = $results[5][1];
-//            $data['jadual'][($results[6][0])] = $results[6][1];
-//            $data['jadual'][($results[7][0])] = $results[7][1];
-//            $data['jadual'][($results[8][0])] = $results[8][1];
-//            $data['jadual'][($results[9][0])] = $results[9][1];
-//            $data['jadual'][($results[10][0])] = $results[10][1];
-//            $data['jadual'][($results[11][0])] = $results[11][1];
-//
-//
-//            $json = json_encode($data);
-//
-//            if (isset($_GET['data']) && $_GET['data'] == 'json') {
-//				header('Content-type: application/json');
-//                echo $json;
-//            } else if (isset($_GET['data']) && $_GET['data'] == 'array') {
-//                echo '<pre>';
-//                print_r($data);
-//                echo '</pre>';
-//                
-//            }else if(isset($_GET['data']) && $_GET['data'] == 'xml'){
-//
-//header("Content-type:text/xml");
-//
-//
-//$xml = new XmlWriter();
-//$xml->openMemory();
-//$xml->startDocument('1.0', 'UTF-8');
-//$xml->startElement('esolat');
-//
-//function write(XMLWriter $xml, $data){
-//    foreach($data as $key => $value){
-//        if(is_array($value)){
-//            $xml->startElement($key);
-//            write($xml, $value);
-//            $xml->endElement();
-//            continue;
-//        }
-//        $xml->writeElement($key, $value);
-//    }
-//}
-//$data['kiblat'] = mb_convert_encoding($data['kiblat'],"UTF-8", "HTML-ENTITIES");
-//write($xml, $data);
-//
-//$xml->endElement();
-//echo $xml->outputMemory(true);
-//
-//
-//            } else {
-//                $json = json_decode($json);
-//                echo 'Jadual waktu solat bagi kawasan ' . $json->kawasan . ' ( arah kiblat ' . $json->kiblat . ' ) pada ' . $json->tarikh;
-//                echo '<hr>';
-//                foreach ($json->jadual as $key => $row) {
-//                    echo $key . ' : ' . $row . '<br/>';
-//                }
-//            }
-//        } else {
-// 
-//            echo '<h1>How To Use?</h1><br/>enter <br/>
-//            - http://api.ibnuyahya.com/solat.php?kod=SGR03<br/>
-//            - http://api.ibnuyahya.com/solat.php?kod=SGR03&data=json<br/>
-//            - http://api.ibnuyahya.com/solat.php?kod=SGR03&data=xml<br/>
-//            - http://api.ibnuyahya.com/solat.php?kod=SGR03&data=array';
-//            echo '<br/>kod format, refer to this url http://www.e-solat.gov.my/e-solat.php';
-//
-//        }
-        
-        
-        ?>
+$data = $test->getEsolatData();
+echo '<pre>';
+print_r($data);
+echo '</pre>';
+
+
