@@ -23,7 +23,7 @@ include('esolat.php');
         </ul>
         <hr>
         <?php
-        $code = isset($_GET['code']) ? $_GET['code'] : 'jhr2';
+        $code = isset($_GET['code']) ? $_GET['code'] : 'jhr02';
         $display = isset($_GET['display']) ? $_GET['display'] : 'year';
         $day = isset($_GET['day']) ? $_GET['day'] : '1';
         $month = isset($_GET['month']) ? $_GET['month'] : '1';
