@@ -15,12 +15,6 @@ include('esolat.php');
         }
     </style>
     <body>
-        <?php
-        echo '<pre>';
-        print_r($_SERVER);
-        echo '</pre>';
-        ?>
-                
         <h3>Usage</h3>
         <ul>
             <li><a href="?code=jhr02&display=year"><?php echo 'http://'.$_SERVER['HTTP_HOST']. $_SERVER['SCRIPT_NAME'];?>?code=jhr02&display=year</a></li>
