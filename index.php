@@ -15,11 +15,17 @@ include('esolat.php');
         }
     </style>
     <body>
+        <?php
+        echo '<pre>';
+        print_r($_SERVER);
+        echo '</pre>';
+        ?>
+                
         <h3>Usage</h3>
         <ul>
-            <li><a href="http://localhost/esolat/?code=jhr02&display=year">http://localhost/esolat/?code=jhr02&display=year</a></li>
-            <li><a href="http://localhost/esolat/?code=jhr02&display=month&month=4">http://localhost/esolat/?code=jhr02&display=month&month=4</a></li>
-            <li><a href="http://localhost/esolat/?code=jhr02&display=day&day=3&month=4">http://localhost/esolat/?code=jhr02&display=day&day=3&month=4</a></li>
+            <li><a href="?code=jhr02&display=year"><?php echo 'http://'.$_SERVER['HTTP_HOST']. $_SERVER['SCRIPT_NAME'];?>?code=jhr02&display=year</a></li>
+            <li><a href="?code=jhr02&display=month&month=4"><?php echo 'http://'.$_SERVER['HTTP_HOST']. $_SERVER['SCRIPT_NAME'];?>?code=jhr02&display=month&month=4</a></li>
+            <li><a href="?code=jhr02&display=day&day=3&month=4"><?php echo 'http://'.$_SERVER['HTTP_HOST']. $_SERVER['SCRIPT_NAME'];?>?code=jhr02&display=day&day=3&month=4</a></li>
         </ul>
         <hr>
         <?php
