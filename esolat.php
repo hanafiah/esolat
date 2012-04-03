@@ -1,8 +1,8 @@
 <?php
 
-/**
+/**-----------------------------------------------------------------------------
  * JAKIM's esolat wrapper
- * Wrap and convert jakim's esolat html data into text delimiter, json and xml 
+ * Wrap and convert jakim's esolat html data into array, text delimiter, json and xml 
  *
  * @author      ibnuyahya <ibnuyahya@gmail.com>
  * @version     1.0 require php 5.2 and above
@@ -14,9 +14,36 @@
  * 
  * You are premit to do whatever you want with this code. Spread it or fork it  
  * from my github, 
+ * 
  *      https://github.com/hanafiah/esolat
  * 
+ * live sample : http://api.ibnuyahya.com/esolat/
+ * 
+ * -----------------------------------------------------------------------------
+ * Sample Usage
+ * -----------------------------------------------------------------------------
+ 
+  <?php
+
+  //instantiate esolat class
+  $esolat = new Esolat();
+
+  //get solat schedule for the whole year
+  $year   = $esolat->getYear();
+  print_r($year);
+
+  //get solat schedule for the selected month
+  $month  = $esolat->getMonth(1); //1 = january, 2 = february ...
+  print_r($month);
+
+  //get solat schedule for the selected day
+  $day = $esolat->getDay(20,1); //first argument is day and second argument is month
+  print_r($day);
+ 
+  ?>
+ 
  */
+
 set_time_limit(120);
 
 class Esolat {
@@ -29,11 +56,24 @@ class Esolat {
     public $cache = true;
     public $cacheDays = 30;
 
+    /**
+     * constructor
+     * 
+     * @param type $zone
+     * @param type $timeout 
+     */
     public function __construct($zone = 'jhr02', $timeout = 120) {
         $this->_zone = $zone;
         $this->_timeout = $timeout;
     }
 
+    /**
+     * fetchEsolatDom()
+     * 
+     * get html dom from target url
+     * 
+     * @return array dom data 
+     */
     public function fetchEsolatDom() {
         $this->_esolatUrl = str_replace('{!ZONE}', $this->_zone, $this->_esolatUrl);
 
@@ -58,6 +98,13 @@ class Esolat {
         return $output;
     }
 
+    /**
+     * getTablesDom()
+     * 
+     * extract html table from dom document.
+     * 
+     * @return Esolat 
+     */
     public function getTablesDom() {
         $htmlDoms = $this->fetchEsolatDom();
         if (count($htmlDoms) > 0) {
@@ -73,6 +120,14 @@ class Esolat {
         return $this;
     }
 
+    /**
+     * getTableData()
+     * 
+     * read html table row and convert it to array data
+     * 
+     * @param integer $tableNumber
+     * @return array of data 
+     */
     public function getTableData($tableNumber = 1) {
         if (count($this->_tables) == 0) {
             $this->getTablesDom();
@@ -96,12 +151,19 @@ class Esolat {
         return $rowData;
     }
 
+    /**
+     * getEsolatInfo()
+     * 
+     * get solat info
+     * 
+     * @return array 
+     */
     public function getEsolatInfo() {
         $cache_file = 'cache/' . md5('info' . $this->_zone);
         if ($this->cache === true) {
 
             if (is_readable($cache_file)) {
-                $result = json_decode(fread(fopen($cache_file, 'r'), filesize($cache_file)),true);
+                $result = json_decode(fread(fopen($cache_file, 'r'), filesize($cache_file)), true);
                 return $result;
             }
         }
@@ -126,11 +188,18 @@ class Esolat {
         return $result;
     }
 
+    /**
+     * getEsolatData()
+     * 
+     * get solat time data
+     * 
+     * @return array 
+     */
     public function getEsolatData() {
         $cache_file = 'cache/' . md5('data' . $this->_zone);
         if ($this->cache === true) {
             if (is_readable($cache_file)) {
-                $result = json_decode(fread(fopen($cache_file, 'r'), filesize($cache_file)),true);
+                $result = json_decode(fread(fopen($cache_file, 'r'), filesize($cache_file)), true);
                 return $result;
             }
         }
@@ -159,10 +228,17 @@ class Esolat {
         return $result;
     }
 
+    /**
+     * getMonth()
+     * 
+     * get solat time schedule by month
+     * 
+     * @param integer $month
+     * @return array 
+     */
     public function getMonth($month = 1) {
         $data = $this->getEsolatData();
         $info = $this->getEsolatInfo();
-
 
         return array(
             'info' => $info[$month - 1],
@@ -171,6 +247,15 @@ class Esolat {
         );
     }
 
+    /**
+     * getDay()
+     * 
+     * get solat time schedule by day
+     * 
+     * @param integer $day
+     * @param integer $month
+     * @return array 
+     */
     public function getDay($day = 1, $month = 1) {
         $data = $this->getEsolatData();
         $info = $this->getEsolatInfo();
@@ -181,6 +266,13 @@ class Esolat {
         );
     }
 
+    /**
+     * getYear()
+     * 
+     * get solat time schedule for the whole year
+     * 
+     * @return array 
+     */
     public function getYear() {
         $data = $this->getEsolatData();
         $info = $this->getEsolatInfo();
