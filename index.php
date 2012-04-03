@@ -79,7 +79,6 @@ include('esolat.php');
 
         function month($code, $month) {
             $test = new Esolat($code);
-            $test->cache = false;
 
             $today = date('d-m-Y');
             $data = $test->getMonth($month);
@@ -110,7 +109,6 @@ include('esolat.php');
 
         function day($code, $day, $month) {
             $test = new Esolat($code);
-            $test->cache = false;
 
             $today = date('d-m-Y');
             $data = $test->getDay($day, $month);
