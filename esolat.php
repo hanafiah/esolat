@@ -166,7 +166,7 @@ class Esolat {
 
         return array(
             'info' => $info[$month - 1],
-            'meta' => $data[$month - 1]['meta'][0],
+            'meta' => $data[0]['meta'][0],
             'data' => $data[$month - 1]['data'],
         );
     }
@@ -176,7 +176,7 @@ class Esolat {
         $info = $this->getEsolatInfo();
         return array(
             'info' => $info[$month - 1],
-            'meta' => $data[$month - 1]['meta'][$day - 1],
+            'meta' => $data[0]['meta'][0],
             'data' => $data[$month - 1]['data'][$day - 1],
         );
     }
