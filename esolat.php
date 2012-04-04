@@ -349,13 +349,13 @@ class Esolat {
      * @since 1.0
      */
     private function removeDuplicateSchedule($array) {
-        foreach ($array as $k => $na)
-            $new[$k] = serialize($na);
-        $uniq = array_unique($new);
+        foreach ($array as $key => $row)
+            $rawData[$key] = serialize($row);
+        $unique = array_unique($rawData);
         
-        foreach ($uniq as $k => $ser)
-            $new1[$k] = unserialize($ser);
-        return ($new1);
+        foreach ($unique as $key => $row)
+            $uniqueData[$key] = unserialize($row);
+        return ($uniqueData);
     }
 
 }
