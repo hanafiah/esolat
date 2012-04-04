@@ -1,11 +1,11 @@
 <?php
 
-/**-----------------------------------------------------------------------------
+/* * -----------------------------------------------------------------------------
  * JAKIM's esolat wrapper
  * Wrap and convert jakim's esolat html data into array, text delimiter, json and xml 
  *
  * @author      ibnuyahya <ibnuyahya@gmail.com>
- * @version     1.0 require php 5.2 and above
+ * @version     1.1 require php 5.2 and above
  * @since       Apr 2, 2012
  * @link        http://www.e-solat.gov.my/prayer_time.php?zon=JHR01&jenis=1
  * 
@@ -24,7 +24,7 @@
  * -----------------------------------------------------------------------------
  * Sample Usage
  * -----------------------------------------------------------------------------
- 
+
   <?php
 
   //instantiate esolat class
@@ -41,9 +41,9 @@
   //get solat schedule for the selected day
   $day = $esolat->getDay(20,1); //first argument is day and second argument is month
   print_r($day);
- 
+
   ?>
- 
+
  */
 
 set_time_limit(120);
@@ -55,6 +55,7 @@ class Esolat {
     private $_timeout;
     private $_tables = array(); // table dom
     private $_month = 0;
+    public $cacheDirectory = 'cache';
     public $cache = true;
     public $cacheDays = 30;
 
@@ -63,10 +64,35 @@ class Esolat {
      * 
      * @param type $zone
      * @param type $timeout 
+     * @since 1.0
      */
     public function __construct($zone = 'jhr02', $timeout = 120) {
+        set_error_handler(array($this, 'handleError'));
         $this->_zone = $zone;
         $this->_timeout = $timeout;
+    }
+
+    /**
+     * handleError()
+     * 
+     * custom error handler
+     * 
+     * @param type $errno
+     * @param type $errstr
+     * @param type $errfile
+     * @param type $errline
+     * @param array $errcontext
+     * @return boolean
+     * @throws ErrorException 
+     * @since 1.1
+     */
+    private function handleError($errno, $errstr, $errfile, $errline, array $errcontext) {
+        // error was suppressed with the @-operator
+        if (0 === error_reporting()) {
+            return false;
+        }
+
+        throw new ErrorException($errstr, 0, $errno, $errfile, $errline);
     }
 
     /**
@@ -75,6 +101,7 @@ class Esolat {
      * get html dom from target url
      * 
      * @return array dom data 
+     * @since 1.0
      */
     public function fetchEsolatDom() {
         $this->_esolatUrl = str_replace('{!ZONE}', $this->_zone, $this->_esolatUrl);
@@ -91,12 +118,24 @@ class Esolat {
             foreach (range(1, 12) as $month) {
                 $url = str_replace('{!MONTH}', $month, $this->_esolatUrl);
                 curl_setopt($ch, CURLOPT_URL, $url);
-                $output[] = curl_exec($ch);
+                $output[$month - 1] = curl_exec($ch);
+
+                //capture curl error
+                if ($output[$month - 1] === false) {
+                    throw new Exception(curl_error($ch));
+                }
+
+                //check header file 200 ok  
+                $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                if ($httpCode != 200) {
+                    throw new Exception('Page not found');
+                }
             }
-            curl_close($ch);
         } catch (Exception $e) {
-            exit("Error with cURL request");
+            exit('Curl error : ' . $e->getMessage());
         }
+        curl_close($ch);
+
         return $output;
     }
 
@@ -106,6 +145,7 @@ class Esolat {
      * extract html table from dom document.
      * 
      * @return Esolat 
+     * @since 1.0
      */
     public function getTablesDom() {
         $htmlDoms = $this->fetchEsolatDom();
@@ -129,6 +169,7 @@ class Esolat {
      * 
      * @param integer $tableNumber
      * @return array of data 
+     * @since 1.0
      */
     public function getTableData($tableNumber = 1) {
         if (count($this->_tables) == 0) {
@@ -159,11 +200,11 @@ class Esolat {
      * get solat info
      * 
      * @return array 
+     * @since 1.0
      */
     public function getEsolatInfo() {
-        $cache_file = 'cache/' . md5('info' . $this->_zone);
+        $cache_file = $this->cacheDirectory . DIRECTORY_SEPARATOR . md5('info' . $this->_zone);
         if ($this->cache === true) {
-
             if (is_readable($cache_file)) {
                 $result = json_decode(fread(fopen($cache_file, 'r'), filesize($cache_file)), true);
                 return $result;
@@ -181,7 +222,7 @@ class Esolat {
             $result[$key] = $info;
         }
 
-        if (is_writable('cache/')) {
+        if (is_writable($this->cacheDirectory . DIRECTORY_SEPARATOR)) {
             $fh = fopen($cache_file, 'w');
             fwrite($fh, json_encode($result));
             fclose($fh);
@@ -196,9 +237,10 @@ class Esolat {
      * get solat time data
      * 
      * @return array 
+     * @since 1.0
      */
     public function getEsolatData() {
-        $cache_file = 'cache/' . md5('data' . $this->_zone);
+        $cache_file = $this->cacheDirectory . DIRECTORY_SEPARATOR . md5('data' . $this->_zone);
         if ($this->cache === true) {
             if (is_readable($cache_file)) {
                 $result = json_decode(fread(fopen($cache_file, 'r'), filesize($cache_file)), true);
@@ -215,12 +257,15 @@ class Esolat {
                 $result[$key]['meta'][] = $month[0];
             }
             $month = array_slice($month, 1);
+            
+            //remove duplicate schedule
+            $month = $this->removeDuplicateSchedule($month);
             $result[$key]['data'] = $month;
         }
 
+        
 
-
-        if (is_writable('cache/')) {
+        if (is_writable($this->cacheDirectory . DIRECTORY_SEPARATOR)) {
 
             $fh = fopen($cache_file, 'w');
             fwrite($fh, json_encode($result));
@@ -237,6 +282,7 @@ class Esolat {
      * 
      * @param integer $month
      * @return array 
+     * @since 1.0
      */
     public function getMonth($month = 1) {
         $data = $this->getEsolatData();
@@ -257,6 +303,7 @@ class Esolat {
      * @param integer $day
      * @param integer $month
      * @return array 
+     * @since 1.0
      */
     public function getDay($day = 1, $month = 1) {
         $data = $this->getEsolatData();
@@ -274,6 +321,7 @@ class Esolat {
      * get solat time schedule for the whole year
      * 
      * @return array 
+     * @since 1.0
      */
     public function getYear() {
         $data = $this->getEsolatData();
@@ -289,6 +337,25 @@ class Esolat {
             'meta' => $data[0]['meta'][0],
             'data' => $monthData,
         );
+    }
+
+    /**
+     * removeDuplicateSchedule()
+     * 
+     * to remove duplicate solat schedule
+     * 
+     * @param type $array
+     * @return type 
+     * @since 1.0
+     */
+    private function removeDuplicateSchedule($array) {
+        foreach ($array as $k => $na)
+            $new[$k] = serialize($na);
+        $uniq = array_unique($new);
+        
+        foreach ($uniq as $k => $ser)
+            $new1[$k] = unserialize($ser);
+        return ($new1);
     }
 
 }
