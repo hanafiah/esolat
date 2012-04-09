@@ -126,24 +126,25 @@ class Esolatlocation {
                     throw new Exception('Page not found');
                 }
                 
-            $pagingHtml = e-solat.php?PageNo=
+              $output[0] = $pagingHtml;
+//            $pagingHtml = e-solat.php?PageNo=
                     
-            foreach (range(1, 12) as $month) {
-                $url = str_replace('{!MONTH}', $month, $this->_esolatLocationUrl);
-                curl_setopt($ch, CURLOPT_URL, $url);
-                $output[$month - 1] = curl_exec($ch);
-
-                //capture curl error
-                if ($output[$month - 1] === false) {
-                    throw new Exception(curl_error($ch));
-                }
-
-                //check header file 200 ok  
-                $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-                if ($httpCode != 200) {
-                    throw new Exception('Page not found');
-                }
-            }
+//            foreach (range(1, 12) as $month) {
+//                $url = str_replace('{!MONTH}', $month, $this->_esolatLocationUrl);
+//                curl_setopt($ch, CURLOPT_URL, $url);
+//                $output[$month - 1] = curl_exec($ch);
+//
+//                //capture curl error
+//                if ($output[$month - 1] === false) {
+//                    throw new Exception(curl_error($ch));
+//                }
+//
+//                //check header file 200 ok  
+//                $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+//                if ($httpCode != 200) {
+//                    throw new Exception('Page not found');
+//                }
+//            }
         } catch (Exception $e) {
             exit('Curl error : ' . $e->getMessage());
         }
@@ -372,4 +373,15 @@ class Esolatlocation {
     }
 
 }
+echo '<pre>';
+//$t = new Esolatlocation();
+//$t->getTablesDom();
+////print_r($t->getTableData(3));
+//$d = $t->getTableData(4);
+//$string = $d[0][0][0];
 
+$string = '1 [a,1,2,3,56,77,8,8]8,90';
+preg_match_all('/(?<=\[)[^]]+(?=\])/im',$string,$matches); //'(?<=\[)[^]]+(?=\])'
+print_r($matches);
+
+echo '</pre>';
