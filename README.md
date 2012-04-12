@@ -4,7 +4,7 @@ A simple php wrapper to crawl dom data from Jakim's esolat web page. http://www.
 
 ## Pre
 
-* This wrapper required php 5.2 and curl support.
+* This wrapper require php 5.2 and curl support.
 * Allow write permission to "cache" directory.
 
 ## Sample Usage
