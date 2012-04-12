@@ -4,23 +4,25 @@ A simple php wrapper to crawl dom data from Jakim's esolat web page. http://www.
 
 ## Pre
 
+* This wrapper required php 5.2 and curl support.
+* Allow write permission to "cache" directory.
 
 ## Sample Usage
      <?php
 
-      //instantiate esolat class
-      $esolat = new Esolat();
+          //instantiate esolat class
+          $esolat = new Esolat();
 
-      //get solat schedule for the whole year
-      $year   = $esolat->getYear();
-      print_r($year);
+          //get solat schedule for the whole year
+          $year   = $esolat->getYear();
+          print_r($year);
 
-      //get solat schedule for the selected month
-      $month  = $esolat->getMonth(1); //1 = january, 2 = february ...
-      print_r($month);
+          //get solat schedule for the selected month
+          $month  = $esolat->getMonth(1); //1 = january, 2 = february ...
+          print_r($month);
 
-      //get solat schedule for the selected day
-      $day = $esolat->getDay(20,1); //first argument is day and second argument is month
-      print_r($day);
+          //get solat schedule for the selected day
+          $day = $esolat->getDay(20,1); //first argument is day and second argument is month
+          print_r($day);
 
       ?>
