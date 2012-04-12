@@ -8,10 +8,19 @@ A simple php wrapper to crawl dom data from Jakim's esolat web page. http://www.
 * Allow write permission to "cache" directory.
 
 ## Sample Usage
+
+Please refer to this page for the location code.
+http://www.e-solat.gov.my/e-solat.php
+
      <?php
+          //include esolat class
+          include 'esolat.php';
+
+          //get data for the following location
+          $code = 'JHR01';
 
           //instantiate esolat class
-          $esolat = new Esolat();
+          $esolat = new Esolat($code);
 
           //get solat schedule for the whole year
           $year   = $esolat->getYear();
