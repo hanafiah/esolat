@@ -1,5 +1,5 @@
 <?php
-include('esolat.php');
+include('../esolat.php');
 ?>
 
 <!DOCTYPE>
