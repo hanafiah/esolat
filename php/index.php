@@ -1,5 +1,6 @@
 <?php
 include('../esolat.php');
+date_default_timezone_set('Asia/Kuala_Lumpur');
 ?>
 
 <!DOCTYPE>
@@ -20,6 +21,8 @@ include('../esolat.php');
             <li><a href="?code=jhr02&display=year"><?php echo 'http://'.$_SERVER['HTTP_HOST']. $_SERVER['SCRIPT_NAME'];?>?code=jhr02&display=year</a></li>
             <li><a href="?code=jhr02&display=month&month=4"><?php echo 'http://'.$_SERVER['HTTP_HOST']. $_SERVER['SCRIPT_NAME'];?>?code=jhr02&display=month&month=4</a></li>
             <li><a href="?code=jhr02&display=day&day=3&month=4"><?php echo 'http://'.$_SERVER['HTTP_HOST']. $_SERVER['SCRIPT_NAME'];?>?code=jhr02&display=day&day=3&month=4</a></li>
+            <li><a href="?code=jhr02&display=today"><?php echo 'http://'.$_SERVER['HTTP_HOST']. $_SERVER['SCRIPT_NAME'];?>?code=jhr02&display=today</a></li>
+            <li><a href="?code=jhr02&display=thismonth"><?php echo 'http://'.$_SERVER['HTTP_HOST']. $_SERVER['SCRIPT_NAME'];?>?code=jhr02&display=thismonth</a></li>
         </ul>
         <hr>
         <?php
@@ -39,6 +42,12 @@ include('../esolat.php');
                 break;
             case 'day':
                 day($code, $day, $month);
+                break;
+            case 'today':
+                day($code, date('j'), date('n'));
+                break;
+            case 'thismonth':
+                month($code, date('n'));
                 break;
             default:
                 year($code);
