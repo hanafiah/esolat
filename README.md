@@ -1,3 +1,6 @@
+# Perhatian!!
+Kod ini tidak lagi berfungsi disebabkan jakim telah menukar paparan laman web esolat mereka. Saya masih belum sempat untuk update kod disini... walaubagaimanapun, saya dah update kod di scraperwiki https://scraperwiki.com/scrapers/esolat/ 
+
 # Esolat Jakim wrapper
 
 A simple php wrapper to crawl dom data from Jakim's esolat web page. http://www.e-solat.gov.my/prayer_time.php?zon=JHR01&jenis=1
